@@ -37,11 +37,11 @@
       layout="prev, pager, next, jumper, ->, sizes, total"
     />
     <el-dialog :title="form.id?'修改品牌':'添加品牌'" :visible.sync="isShowDialog">
-      <el-form :model="form" style="width: 80%">
-        <el-form-item label="品牌名称" label-width="100px">
+      <el-form :model="form" style="width: 80%" :rules="rules" ref="ruleForm">
+        <el-form-item label="品牌名称" label-width="100px" prop="tmName">
           <el-input v-model="form.tmName" autocomplete="off"></el-input>
         </el-form-item>
-        <el-form-item label="品牌LOGO" label-width="100px">
+        <el-form-item label="品牌LOGO" label-width="100px" prop="logoUrl">
           <el-upload
             class="avatar-uploader"
             action="/dev-api/admin/product/fileUpload"
@@ -82,7 +82,16 @@ export default {
       },
 
       imageUrl: "", // 上传的图片url
-      loading: false //是否正在请求
+      loading: false, //是否正在请求
+      rules: {
+        tmName: [
+          { required: true, message: "请输入品牌名称" }, //trigger: "change"默认值
+          // { min: 2, max: 10, message: "长度在 2 到 10 个字符", trigger: "blur" }//内置校验规则
+          // 自定义规则校验
+          { trigger: "blur", validator: this.validateTmName }
+        ],
+        logoUrl: [{ required: true, message: "LOGO必须指定" }]
+      }
     };
   },
 
@@ -91,6 +100,20 @@ export default {
     this.getTrademarks();
   },
   methods: {
+    /*自定义校验函数  
+    value：需要进行校验的数据值
+    callback：用来指定校验是否通过的函数，如果执行没有传递参数代表通过，若传递了代表不通过
+    */
+    validateTmName(rule, value, callback) {
+      if (value.length < 2 || value.length > 10) {
+        //不通过
+        // callback(new Error('长度必须在2-10之间'));
+        callback("长度必须在2-10之间");
+      } else {
+        //通过
+        callback();
+      }
+    },
     // 删除指定的品牌
     remove(trademark) {
       this.$confirm(`确定删除 ${trademark.tmName} 吗?`, "提示", {
@@ -131,29 +154,38 @@ export default {
         });
     },
     // 添加或更新
-    async addOrUpdate() {
-      // 准备数据
-      const trademark = this.form;
-      let result;
-      // 提交请求
-      if (trademark.id) {
-        // 更新
-        result = await this.$API.trademark.update(trademark);
-      } else {
-        // 添加
-        result = await this.$API.trademark.add(trademark);
-      }
-      // 请求成功
-      if (result.code === 200) {
-        this.$message.success(`${trademark.id ? "更新" : "添加"}成功!`);
-        // 关闭当前dialog
-        this.isShowDialog = false;
-        // 重新获取列表显示  更新显示当前页\添加显示第一页
-        this.getTrademarks(trademark.id ? this.page : 1);
-      } else {
-        // 请求失败
-        this.$message.success(`${trademark.id ? "更新" : "添加"}失败!`);
-      }
+    addOrUpdate() {
+      // 对表单所有内容进行校验
+      this.$refs["ruleForm"].validate(async valid => {
+        // 校验通过
+        if (valid) {
+          // 准备数据
+          const trademark = this.form;
+          let result;
+          // 提交请求
+          if (trademark.id) {
+            // 更新
+            result = await this.$API.trademark.update(trademark);
+          } else {
+            // 添加
+            result = await this.$API.trademark.add(trademark);
+          }
+          // 请求成功
+          if (result.code === 200) {
+            this.$message.success(`${trademark.id ? "更新" : "添加"}成功!`);
+            // 关闭当前dialog
+            this.isShowDialog = false;
+            // 重新获取列表显示  更新显示当前页\添加显示第一页
+            this.getTrademarks(trademark.id ? this.page : 1);
+          } else {
+            // 请求失败
+            this.$message.success(`${trademark.id ? "更新" : "添加"}失败!`);
+          }
+        } else {
+          console.log("校验失败");
+          return false;
+        }
+      });
     },
     // 上传成功的回调
     handleAvatarSuccess(res, file) {
