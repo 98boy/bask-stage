@@ -2,12 +2,12 @@
   <div>
     <el-button type="primary" icon="el-icon-plus" @click="showAdd">添加</el-button>
 
-    <el-table style="margin: 20px 0" :data="trademarks" border v-loading="loading">
+    <el-table v-loading="loading" style="margin: 20px 0" :data="trademarks" border>
       <el-table-column label="序号" type="index" width="80" align="center" />
 
-      <!-- 
+      <!--
         表格的一列显示的就是数据的属性值: prop来指定
-        如果不是(需要显示一个特定的标签结构): 
+        如果不是(需要显示一个特定的标签结构):
 
       -->
       <el-table-column prop="tmName" label="品牌名称" />
@@ -27,19 +27,19 @@
     </el-table>
 
     <el-pagination
-      @current-change="getTrademarks"
-      @size-change="handleSizeChange"
       style="text-align: center"
       :current-page="page"
       :page-sizes="[3, 6, 9]"
       :page-size="limit"
       :total="total"
       layout="prev, pager, next, jumper, ->, sizes, total"
+      @current-change="getTrademarks"
+      @size-change="handleSizeChange"
     />
     <el-dialog :title="form.id?'修改品牌':'添加品牌'" :visible.sync="isShowDialog">
-      <el-form :model="form" style="width: 80%" :rules="rules" ref="ruleForm">
+      <el-form ref="ruleForm" :model="form" style="width: 80%" :rules="rules">
         <el-form-item label="品牌名称" label-width="100px" prop="tmName">
-          <el-input v-model="form.tmName" autocomplete="off"></el-input>
+          <el-input v-model="form.tmName" autocomplete="off" />
         </el-form-item>
         <el-form-item label="品牌LOGO" label-width="100px" prop="logoUrl">
           <el-upload
@@ -50,8 +50,8 @@
             :before-upload="beforeAvatarUpload"
           >
             <img v-if="imageUrl" :src="imageUrl" class="avatar" />
-            <i v-else class="el-icon-plus avatar-uploader-icon"></i>
-            <div class="el-upload__tip" slot="tip">只能上传jpg/png文件，且不超过50kb</div>
+            <i v-else class="el-icon-plus avatar-uploader-icon" />
+            <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过50kb</div>
           </el-upload>
         </el-form-item>
       </el-form>
@@ -70,10 +70,10 @@ export default {
 
   data() {
     return {
-      trademarks: [], //当前页的品牌列表
-      total: 0, //总数量
-      page: 1, //当前页码
-      limit: 3, //每页的数量
+      trademarks: [], // 当前页的品牌列表
+      total: 0, // 总数量
+      page: 1, // 当前页码
+      limit: 3, // 每页的数量
       isShowDialog: false, // 是否显示添加的对话框
       form: {
         // 用来收集品牌添加的数据
@@ -82,10 +82,10 @@ export default {
       },
 
       imageUrl: "", // 上传的图片url
-      loading: false, //是否正在请求
+      loading: false, // 是否正在请求
       rules: {
         tmName: [
-          { required: true, message: "请输入品牌名称" }, //trigger: "change"默认值
+          { required: true, message: "请输入品牌名称" }, // trigger: "change"默认值
           // { min: 2, max: 10, message: "长度在 2 到 10 个字符", trigger: "blur" }//内置校验规则
           // 自定义规则校验
           { trigger: "blur", validator: this.validateTmName }
@@ -100,17 +100,17 @@ export default {
     this.getTrademarks();
   },
   methods: {
-    /*自定义校验函数  
+    /* 自定义校验函数
     value：需要进行校验的数据值
     callback：用来指定校验是否通过的函数，如果执行没有传递参数代表通过，若传递了代表不通过
     */
     validateTmName(rule, value, callback) {
       if (value.length < 2 || value.length > 10) {
-        //不通过
+        // 不通过
         // callback(new Error('长度必须在2-10之间'));
         callback("长度必须在2-10之间");
       } else {
-        //通过
+        // 通过
         callback();
       }
     },
@@ -126,6 +126,7 @@ export default {
           // 如果成功了, 提示成功, 重新获取列表(哪一页?)
           if (result.code === 200) {
             this.$message({
+              /* eslint-disable */
               type: "success",
               message: "删除成功!"
             });
@@ -218,11 +219,16 @@ export default {
     showAdd() {
       // 清除form中的数据
       this.form = {
+        /* eslint-disable */
         tmName: "",
         logoUrl: ""
       };
       // 显示isShowDialog
       this.isShowDialog = true;
+      // 显示提示信息后，清除提示信息
+      this.$nextTick(() => {
+        this.$refs.ruleForm.clearvalidate();
+      });
     },
     // 修改每页数量
     handleSizeChange(pageSize) {
@@ -243,7 +249,7 @@ export default {
         this.trademarks = records;
         this.total = total;
       } else {
-        //失败的提示
+        // 失败的提示
         this.$message({
           type: "warning",
           message: "获取分页列表失败"

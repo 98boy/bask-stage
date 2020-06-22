@@ -1,50 +1,50 @@
-import Vue from 'vue'
+import Vue from "vue";
 
 // 引入专门的reset.css模块
-import 'normalize.css/normalize.css'
+import "normalize.css/normalize.css";
 
 // 完整引入element-ui
-import ElementUI from 'element-ui'
-import 'element-ui/lib/theme-chalk/index.css'
+import ElementUI from "element-ui";
+import "element-ui/lib/theme-chalk/index.css";
 
 // 引入es6模块化的测试模块
-import './test/es-module/test2'
-import './test/es-module/test4'
+import "./test/es-module/test2";
+import "./test/es-module/test4";
 
 // 引入全局样式
-import '@/styles/index.scss'
+import "@/styles/index.scss";
 
-import App from './App'
+import App from "./App";
 
 // 引入vuex的store对象模块
-import store from './store'
+import store from "./store";
 
 // 引入vue-router的router对象模块
-import router from './router'
+import router from "./router";
 
 // 引入svg-icon的主模块
-import '@/icons'
+import "@/icons";
 
 // 引入权限控制的主模块
-import '@/permission' // permission control
+import "@/permission"; // permission control
 
 // 引入按钮级别权限控制的工具函数
-import { hasBtnPermission } from './utils/permission'
+import { hasBtnPermission } from "./utils/permission";
 
 // 引入包含所有接口请求函数模块的API对象
-import * as API from '@/api'
+import * as API from "@/api";
 
 // 引入准备全局注册的组件
-import HintButton from '@/components/HintButton'
-import CategorySelector from '@/components/CategorySelector'
+import HintButton from "@/components/HintButton";
+import CategorySelector from "@/components/CategorySelector";
 
 // 注册全局组件
-Vue.component('HintButton', HintButton)
-Vue.component('CategorySelector', CategorySelector)
+Vue.component("HintButton", HintButton);
+Vue.component("CategorySelector", CategorySelector);
 
 // 挂载到Vue原型对象上, 以便组件中直接可见
-Vue.prototype.$hasBP = hasBtnPermission
-Vue.prototype.$API = API
+Vue.prototype.$hasBP = hasBtnPermission;
+Vue.prototype.$API = API;
 
 // 引入mockjs的配置, 不使用
 /**
@@ -55,19 +55,19 @@ Vue.prototype.$API = API
  * Currently MockJs will be used in the production environment,
  * please remove it before going online ! ! !
  */
-if (process.env.NODE_ENV === 'production') {
-  const { mockXHR } = require('../mock')
-  mockXHR()
+if (process.env.NODE_ENV === "production") {
+  const { mockXHR } = require("../mock");
+  mockXHR();
 }
 
 // 声明使用element插件
-Vue.use(ElementUI)
+Vue.use(ElementUI);
 
-Vue.config.productionTip = false
+Vue.config.productionTip = false;
 
 new Vue({
-  el: '#app',
+  el: "#app",
   router,
   store,
   render: h => h(App)
-})
+});
