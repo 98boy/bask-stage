@@ -1,11 +1,11 @@
 <template>
   <div>
     <el-card>
-      <CategorySelector @categoryChange="handleCategoryChange" />
+      <CategorySelector @categoryChange="handleCategoryChange" ref="cs" />
     </el-card>
     <el-card style="margin-top:20px">
       <div v-show="isShowList">
-        <el-button type="primary" icon="el-icon-plus" @click="showAdd">添加属性</el-button>
+        <el-button type="primary" icon="el-icon-plus" @click="showAdd" :disabled="!category3Id">添加属性</el-button>
         <el-table :data="attrs" border v-loading="loading">
           <el-table-column type="index" width="80px" align="center" label="序号"></el-table-column>
           <el-table-column label="属性名称" prop="attrName" width="150px"></el-table-column>
@@ -28,8 +28,19 @@
                 @click="showUpdate(row)"
               />
               <!-- <el-button type="primary" icon="el-icon-edit" size="minin"></el-button> -->
-              <HintButton type="danger" icon="el-icon-delete" size="minin" title="删除" />
-              <!-- <el-button type="danger" icon="el-icon-delete" size="minin"></el-button> -->
+
+              <el-popconfirm :title="`确定删除 ${row.attrName} 吗?`" @onConfirm="removeList(row.id)">
+                <!-- @onConfirm="attr.attrValueList.splice($index, 1)" -->
+                <HintButton
+                  slot="reference"
+                  type="danger"
+                  icon="el-icon-delete"
+                  size="minin"
+                  title="删除"
+                />
+              </el-popconfirm>
+
+              <!-- <el-button type="danger" icon="el-icon-delete" size="minin"></el-button>-->
             </template>
           </el-table-column>
         </el-table>
@@ -40,7 +51,12 @@
             <el-input type="text" placeholder="请输入属性名" v-model="attr.attrName"></el-input>
           </el-form-item>
         </el-form>
-        <el-button type="primary" icon="el-icon-plus" @click="addAttrValue()">添加属性值</el-button>
+        <el-button
+          type="primary"
+          icon="el-icon-plus"
+          @click="addAttrValue()"
+          :disabled="!attr.attrName"
+        >添加属性值</el-button>
         <el-button @click="isShowList=true">取消</el-button>
         <el-table border style="margin:20px 0" :data="attr.attrValueList">
           <el-table-column align="center" label="序号" type="index" width="80px"></el-table-column>
@@ -53,7 +69,11 @@
                 @blur="toList(row)"
                 @keyup.enter.native="toList(row)"
               ></el-input>
-              <span v-else @click="toEdit(row,$index)">{{row.valueName}}</span>
+              <span
+                v-else
+                @click="toEdit(row,$index)"
+                style="display:inline-block;width:100%"
+              >{{row.valueName}}</span>
             </template>
           </el-table-column>
           <el-table-column align="center" label="操作">
@@ -74,7 +94,12 @@
           </el-table-column>
         </el-table>
 
-        <el-button type="primary" ref="dis" :disabled="noShow">保存</el-button>
+        <el-button
+          type="primary"
+          ref="dis"
+          :disabled="!attr.attrName||!attr.attrValueList.length===0"
+          @click="save"
+        >保存</el-button>
 
         <el-button @click="isShowList=true">取消</el-button>
       </div>
@@ -83,7 +108,7 @@
 </template>
 
 <script>
-import { Level } from "chalk";
+import cloneDeep from "lodash/cloneDeep";
 export default {
   name: "AttrList",
   data() {
@@ -100,18 +125,68 @@ export default {
         attrValueList: [], //属性值列表
         categoryId: "", //三级分类ID
         categoryLevel: 3 //分类级别
-      },
-      noShow: false
+      }
     };
   },
+  watch: {
+    // 监视isShowList
+    isShowList(value) {
+      this.$refs.cs.disabled = !value;
+    }
+  },
   mounted() {
-    this.category1Id = 2;
-    this.category2Id = 13;
-    this.category3Id = 61;
-
-    this.getAttrs();
+    // this.category1Id = 2;
+    // this.category2Id = 13;
+    // this.category3Id = 61;
+    // this.getAttrs();
   },
   methods: {
+    //
+    async removeList(id) {
+      const result = await this.$API.attr.remove(id);
+      if (result.code === 200) {
+        // 提示成功
+        this.$message.success("删除属性成功");
+
+        this.getAttrs();
+      } else {
+        // 失败
+        this.$message.error("删除属性失败");
+      }
+    },
+    // 添加或更新属性
+    async save() {
+      // 准备数据
+      const { attr } = this;
+      attr.attrValueList = attr.attrValueList.filter(attrValue => {
+        if (attrValue.valueName) {
+          // 删除edit属性
+          delete attrValue.edit;
+          return true;
+        } else {
+          return false;
+        }
+      });
+      // 如果attr.attrValueList是空数组就不发请求
+      if (attr.attrValueList.length === 0) {
+        this.$message.warning("至少指定一个属性值名称");
+        return;
+      }
+      // 发添加或更新的请求
+      const result = await this.$API.attr.save(attr);
+      // 成功
+      if (result.code === 200) {
+        // 提示成功
+        this.$message.success("保存属性成功");
+        // 跳转属性列表页面
+        this.isShowList = true;
+        // 更新列表数据显示
+        this.getAttrs();
+      } else {
+        // 失败
+        this.$message.error("保存属性失败");
+      }
+    },
     // 属性名称从编辑变成查看
     toList(attrValue) {
       // 没有输入内容直接跳出
@@ -151,11 +226,6 @@ export default {
         edit: true //标识为编辑模式
       };
 
-      // if (this.attr.attrValueList[index].valueName) {
-      //   this.noShow = false;
-      // } else {
-      //   this.noShow = true;
-      // }
       // 添加到对应数组
       this.attr.attrValueList.push(attrValue);
 
@@ -175,12 +245,13 @@ export default {
       };
       // 显示界面
       this.isShowList = false;
-      this.noShow = true;
     },
     // 显示修改页面
     showUpdate(attr) {
       // 更新attr的值
-      this.attr = attr;
+      // this.attr = attr;
+      // this.attr = { ...attr };//浅拷贝
+      this.attr = cloneDeep(attr); // 对列表项的attr进行深克隆并指定给修改界面的attr
       // 显示更新页面
       this.isShowList = false;
     },
@@ -190,12 +261,12 @@ export default {
         // 重置二级与三级分类的数据
         this.category2Id = null;
         this.category3Id = null;
-
+        this.attrs = []; //重置属性列表
         this.category1Id = categoryId;
       } else if (level === 2) {
         // 重置三级分类的数据
         this.category3Id = null;
-
+        this.attrs = []; //重置属性列表
         this.category2Id = categoryId;
       } else {
         this.category3Id = categoryId;
